@@ -5,8 +5,7 @@ Here you will find the minimal requirements (initial configurations and LAMMPS s
     a)Linear and ring DNA molecules without explicit phosphates.
     b)Linear and ring DNA molecules with explicit phosphates.
     c)The protocols for denaturation of linear and DNA molecules (only for the case without explicit phosphates).
-    d)Transcription by a model polymerase.
-    e)Major groove binding proteins.
+    d)Major groove binding proteins.
 
 A brief explanation of the implementation in each of these cases is provided in the README files inside the corresponding folders.
 
