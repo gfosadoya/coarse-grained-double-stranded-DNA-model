@@ -12,7 +12,7 @@ A brief explanation of the implementation in each of these cases is provided in 
 For details in the model see our paper:
 Y. A. G. Fosado, D. Michieletto, J. Allan, C. A. Brackley, O. Henrich and D. Marenduzzo "A single nucleotide resolution model for large-scale simulations of double stranded DNA" Soft Matter 12 9458-9470 (2016).
 
-For details in the denaturation of linear and rind DNA molecules see:
+For details in the denaturation of linear and ring DNA molecules see:
 Y. A. G. Fosado, D. Michieletto, and D. Marenduzzo "Dynamical Scaling and Phase Coexistence in Topologically Constrained DNA Melting" Phys. Rev. Lett. 119, 118002 (2017).
 
 All the LAMMPS scripts have been tested using the current version of LAMMPS (22-Aug-2018). Please make sure that the ASPHERE, RIGID, MOLECULE and USER-MISC packages are installed. These are standard packages that come with LAMMPS, and can be enabled before compiling, e.g. with the command:
