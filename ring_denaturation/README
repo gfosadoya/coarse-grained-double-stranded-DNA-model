@@ -1,0 +1,35 @@
+The initial configuration is exactly the same as the normal ring molecule but we need to set:
+
+ a) 4 types of bonds     instead of 3. The extra bond is because the magnitude of the morse interaction for the denatured base-pairs decreases.
+ b) 4 types of angles    instead of 2. The two extra angles is because the magnitude of the Roll and Kratky–Porod interactions for the denatured base-pairs decreases.
+ c) 2 types of dihedrals instead of 1. The extra dihedral is because the magnitude of the dihedral interaction for the denatured base-pairs decreases.
+
+
+
+
+The program "lp_ssDNA_new_list_cosine_stack_roll_dihedral_ring" computes the distance between patches for every base pair. If this is distance is bigger than a cuttoff (0.3nm) for two or more consecutive base-pairs, then the program changes the angle, dihedral and bond types of the dentaured base-pairs. This is done in the following way, to simulate the lack of rigidity for the ssDNA (denatured section):
+
+   Non denatured base-pairs                     Denatured base-pairs
+angle_coeff 1 harmonic 200.0 90            angle_coeff 3 harmonic 20.0 90    
+angle_coeff 2 cosine 52.0                  angle_coeff 4 cosine 2.0  
+
+dihedral_coeff 1 50.0 1 -144 0.0           dihedral_coeff 2 0.0 1 -144 0.0 
+
+bond_coeff 3 morse 30.0 8 0.33             bond_coeff 4 morse 3.0 8 0.33
+
+
+Be careful, because the program "lp_ssDNA_new_list_cosine_stack_roll_dihedral_ring" has to be inside the folder created after running the lammps script.
+
+
+
+
+Since using the external programm to change the type of interactions produces an abrut change in the dynamics of the DNA model, we suggest to decrease the lammps timestep from the usual value of 0.005 to 0.001. Please be aware that this will produce some warnings (FENE bond too long) because the fene bonds are close to the maximum value R_0 set in the lammps script. This is ok and the user should not be worried about it. Finally, we found that sometimes the simulations crash. In this case we suggest to restart from the last file produced during the simulation (called newconfiguration_xxxxxx, where xxxxxx represents the timestep) and change the seed of the integrators. With this the simulation should not crash at the same timestep, but if the problem persist the best approach is to decrease the timestep even more.
+
+With the c++ programm to change the persistence length of ssDNA inside the folder "den_ring_DNA_N500_T50/lp_ssDNA_new_list_cosine_stack_roll_dihedral_ring.out" run the LAMMPS script:
+    ./lmp_serial_22Aug2018 -in commands_lammps_ringdsDNA_denaturation
+
+Please note that the file "radius_of_gyration.txt" contains empty lines between separating the information at different times. To remove these blank spaces the user could use for example sed, and type in a terminal:
+    sed -i '/^$/d' radius_of_gyration.txt
+
+
+

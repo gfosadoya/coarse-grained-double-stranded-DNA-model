@@ -1,0 +1,45 @@
+The initial configuration is a double-stranded DNA (dsDNA) ring 1000 bp long, lying on the x-y plane and with centre of the ring at the origin. Note that in order to have a supercolied dsDNA, you have to set the number of turns different from the natural number of turns (given by nbp/10). If for example you have a circular dsDNA made by nbp=1000 bp, the relaxed number of helical turns would be roughly 1000/10 = 100. So if you set the number of helical turns in the initial configuration different to 100, and you let the system to equilibrate, you will end up with a supercoiled ring (positive supercoiled if Turns>100 and negative supercoiled if Turns<100).
+
+In this file the indices and type of particles are the same as in the linear configuration:
+
+    1.-Each nucleotide is represented by a rigid body with two interaction sites, so in total there are 4000 particles (2000 per single-stranded DNA (ssDNA)).
+    2.-The first 2000 particles correspond to the patchy beads in the first strand:
+	a)Odd indices represent the "bead" sites.
+	b)Even indices represent the "patch" sites.
+    3.-Since a nucleotide is made by two particles, there are 1000 rigid bodies per ssDNA.
+       For example, particles 1 and 2 are part of the same molecule: 1.
+    4.-The type of particles in the first strand:
+	a)All the patches are of type 2.
+	b)Every interactive bead (type 1) is followed by two ghost beads (type 5).
+    5.-The complementary ssDNA (last 2000 particles) are arrange in a similar way to the first ssDNA:
+	a)Odd indices represent the "bead" sites.
+	b)Even indices represent the "patch" sites.
+	c)All the patches are of type 4.
+	d)Every interactive bead (type 3) is followed by two ghost beads (type 6).
+
+The type of interactions are the same as in the linear molecule, but there is a different number of bonds, angles and dihedrals. This because the ends of the molecule are linked for the ring case.
+    1.-Backbone: set by fene bonds(type 1) between consecutive beads in the same strand. This means between indices:
+                 Strand 1: 1-3, 3-5, 5-7, ..., 1997-1999, 1999-1
+                 Strand 2: 2001-2003, 2003-2005, 2005-2007, ..., 3997-3999, 3999-2001
+    2.-Hydrogen Bonds: set by a harmonic/shift/cut bond(type 2) between complementary patches. This means between indices:
+                 2-2002, 4-2004, 6-2006, ..., 2000-4000.
+    3.-Stacking interaction: set by a morse potential that is implemented in lammps by a bond (type 3) between consecutive
+       patches in the same strand. This means between indices:
+                 Strand 1: 2-4, 4-6, 6-8, ..., 1998-2000, 2000-2
+                 Strand 2: 2002-2004, 2004-2006, 2006-2008, ..., 3998-4000, 4000-2002
+
+    4.-Roll interaction: set by a harmonic angle (type 1) between two consecutive patches and the bead of the second patch.
+       This means between indices:
+                 Strand 1: 2-4-3, 4-6-5, 6-8-7, ..., 1998-2000-1999, 2000-2-1.
+                 Strand 2: 2002-2004-2003, 2004-2006-2005, 2006-2008-2007, ..., 3998-4000-3999, 4000-2002-2001.
+       There is no constraint in the first bases for the ring molecule (this is just for the linear chain).
+
+    5.-Kratky–Porod potential: set by a cosine angle (type 2) between three sonsecutive patches in the same strand.
+       This means between indices:
+                 Strand 1: 2-4-6, 4-6-8, 6-8-10, ..., 1996-1998-2000, 1998-2000-2, 2000-2-4.
+                 Strand 2: 2002-2004-2006, 2004-2006-2008, 2006-2008-2010, ..., 3996-3998-4000, 3998-4000-2002, 4000-2002-2004.
+
+    6.-Dihedral for the right-handedness of the chain.(type 1) between the quadrupled of monomers (bead-patch-patch-bead).
+       This means between indices:
+                 Strand 1: 1-2-4-3, 3-4-6-5, 5-6-8-7, ...,1997-1998-2000-1999, 1999-2000-2-1.
+                 Strand 2: 2001-2002-2004-2003, 2003-2004-2006-2005, 2005-2006-2008-2007, ...,3997-3998-4000-3999, 3999-4000-2002-2001.

@@ -1,0 +1,250 @@
+#####  DEFINTIONS  #####
+variable N equal 1000 #number of base-pair 
+variable T equal 100  #number of helical turns
+variable P equal 2000 #number of proteins
+variable rname   index initial_configuration_ringdsDNA_phosphates_N${N}_T${T}_P${P}
+variable simname index dsDNA.N${N}
+
+
+#####  PARAMETERS  #####
+units lj
+atom_style molecular 
+boundary p p p  
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes 
+
+
+#####  RESTART  #####
+restart 1000000 ${simname}.Restart
+read_data ${rname}
+#read_restart ${rname}
+#reset_timestep 0 
+
+
+#####  GROUPS  #####
+group bb    type 1 3 5 6
+group hb    type 2 4
+group fake  type 5 6
+group ph    type 7 8
+group dsdna type 1 2 3 4 5 6 7 8
+neigh_modify exclude molecule/intra dsdna
+
+#protein bead is type 9 and protein patch is type 10
+group proteins type 9 10
+neigh_modify exclude molecule/intra proteins
+
+
+#####  DUMPS  #####
+dump 1 all custom 200000 dump.ringdnaphosphatesprot.lammpstrj id mol type x y z
+dump_modify 1 format line "%d %d %d %.5f %.5f %.5f"
+
+dump 2 all custom 200000 IN*.data id mol type x y z ix iy iz
+dump_modify 2 format line "%d %d %d %.5f %.5f %.5f %d %d %d"
+
+
+#####  ANGLES  #####
+angle_style hybrid harmonic cosine
+angle_coeff 1 harmonic 200.0 90   #the Patch-patch-Bead angle in the same strand
+angle_coeff 2 cosine 52.0         #The angle between three consecutive patches in the same strand
+angle_coeff 3 harmonic 200.0 90   #the Patch-Patch-Phosphate angle in the same strand
+
+
+#####  DIHEDRALS  #####
+dihedral_style charmm 
+dihedral_coeff 1 50.0 1 -144 0.0 #right-hand twist   #Dihedral to 36 degrees --> d=-180+36=-144. We defined in the input file the correct internal dihedral
+
+
+#####  PAIRS  #####
+pair_style hybrid	soft 1.2224 lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff 	* * soft   0.0 0.0
+pair_coeff 	* * lj/cut 0.0 0.0 0.0
+
+pair_coeff	1 3 lj/cut 1.0 1.0 1.12246152962189 #bb1-bb2
+
+pair_coeff	1 1 lj/cut 1.0 1.0 1.12246152962189 #bb1-bb1
+
+pair_coeff	3 3 lj/cut 1.0 1.0 1.12246152962189 #bb2-bb2
+
+pair_coeff	5 6 lj/cut 1.0 0.5 0.5612
+pair_coeff	3 5 lj/cut 1.0 0.5 0.5612
+pair_coeff	1 6 lj/cut 1.0 0.5 0.5612
+
+pair_coeff	7 7 lj/cut 1.0 0.2071 0.2324       #phosphate-phosphate        first strand
+pair_coeff	1 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead first strand
+pair_coeff	5 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       first strand
+pair_coeff	2 7 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            first strand
+pair_coeff	3 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead second strand
+pair_coeff	6 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       second strand
+pair_coeff	4 7 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+
+pair_coeff	8 8 lj/cut 1.0 0.2071 0.2324       #phosphate-phosphate        second strand
+pair_coeff	1 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead first strand
+pair_coeff	5 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       first strand
+pair_coeff	2 8 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+pair_coeff	3 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead second strand
+pair_coeff	6 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       second strand
+pair_coeff	4 8 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+
+pair_coeff	7 8  lj/cut 1.0 0.2071 0.2324 #phosphate-phosphate second strand
+
+
+#Protein Bead(9) - DNA beads(1, 3, 5, 6) soft interaction to avoid overlapping at the beggining of the simulation
+pair_coeff 	1 9 soft 100.0 1.5
+pair_coeff 	3 9 soft 100.0 1.5 
+pair_coeff 	5 9 soft 100.0 1.5 
+pair_coeff 	6 9 soft 100.0 1.5 
+
+#Protein Bead(9) - DNA patches(2, 4) soft interaction to avoid overlapping
+pair_coeff 	2 9 soft 100.0 1.0 
+pair_coeff 	4 9 soft 100.0 1.0 
+
+#Protein Bead(9)-phosphates(7, 8) soft interaction to avoid overlapping
+pair_coeff 	7 9 soft 100.0 1.10355
+pair_coeff 	8 9 soft 100.0 1.10355 
+
+#Protein Bead(9)-protein Bead(9) soft interaction to avoid overlapping
+pair_coeff  	9 9 soft 100.0 2.0
+
+
+
+#Protein Patch(10) - DNA beads(1, 3, 5, 6) soft interaction to avoid overlapping
+pair_coeff 	1 10 soft 100.0 0.75
+pair_coeff 	3 10 soft 100.0 0.75
+pair_coeff 	5 10 soft 100.0 0.75
+pair_coeff 	6 10 soft 100.0 0.75
+
+#Protein Patch(10) - DNA patches(2, 4) soft interaction to avoid overlapping
+pair_coeff 	2 10 soft 100.0 0.25 
+pair_coeff 	4 10 soft 100.0 0.25
+
+#Protein Patch(10)-phosphates(7, 8) soft interaction
+pair_coeff 	7 10 soft 100.0 0.35355 
+pair_coeff 	8 10 soft 100.0 0.35355 
+
+#Protein Bead(9)-protein patch(10) soft interaction
+pair_coeff     9 10 soft 100.0 1.25
+
+#Protein Patch(10)-protein patch(10) soft interaction
+pair_coeff     10 10 soft 100.0 0.5
+
+
+#####  BONDS  #####
+bond_style  hybrid fene harmonic/shift/cut morse
+special_bonds fene#<=== I M P O R T A N T (new command)
+bond_coeff 1 fene  30.0  0.6825  1.0   0.4430
+bond_coeff 2 harmonic/shift/cut  6.0 0.0 0.3 
+bond_coeff 3 morse 30.0 8 0.33       
+
+
+#####  FIXES  #####
+fix 1 dsdna    rigid/small molecule langevin 1.0 1.0 1.0  254178
+fix 2 proteins rigid/small molecule langevin 1.0 1.0 1.0  965214
+
+#####  THERMO  #####
+compute 	MSDs bb msd
+compute		GYRs bb gyration
+thermo 1000
+thermo_style custom  step  temp  c_MSDs[4] c_GYRs cpu
+
+fix print1 dsdna print 200000 "$(step)  $(c_GYRs)" screen no file radius_of_gyration.txt
+
+#####  INTEGR  #####
+timestep 0.005
+
+shell mkdir ring_DNA_phosphates_N${N}
+shell cd ring_DNA_phosphates_N${N}
+
+
+#####  RUN  #####
+run 1000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####  PAIRS  #####
+pair_style hybrid	soft 1.2224 lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff 	* * soft   0.0 0.0
+pair_coeff 	* * lj/cut 0.0 0.0 0.0
+
+pair_coeff	1 3 lj/cut 1.0 1.0 1.12246152962189 #bb1-bb2
+
+pair_coeff	1 1 lj/cut 1.0 1.0 1.12246152962189 #bb1-bb1
+
+pair_coeff	3 3 lj/cut 1.0 1.0 1.12246152962189 #bb2-bb2
+
+pair_coeff	5 6 lj/cut 1.0 0.5 0.5612
+pair_coeff	3 5 lj/cut 1.0 0.5 0.5612
+pair_coeff	1 6 lj/cut 1.0 0.5 0.5612
+
+pair_coeff	7 7 lj/cut 1.0 0.2071 0.2324       #phosphate-phosphate        first strand
+pair_coeff	1 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead first strand
+pair_coeff	5 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       first strand
+pair_coeff	2 7 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            first strand
+pair_coeff	3 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead second strand
+pair_coeff	6 7 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       second strand
+pair_coeff	4 7 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+
+pair_coeff	8 8 lj/cut 1.0 0.2071 0.2324       #phosphate-phosphate        second strand
+pair_coeff	1 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead first strand
+pair_coeff	5 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       first strand
+pair_coeff	2 8 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+pair_coeff	3 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-interactive bead second strand
+pair_coeff	6 8 lj/cut 1.0 0.60355 0.677461969 #phosphate-ghost bead       second strand
+pair_coeff	4 8 lj/cut 1.0 0.10355 0.116230945 #phosphate-patch            second strand
+
+pair_coeff	7 8  lj/cut 1.0 0.2071 0.2324 #phosphate-phosphate second strand
+
+
+
+#Protein Bead(9) - DNA beads(1, 3, 5, 6) SOFT INTERACTION to allow proteins get into the dsDNA
+pair_coeff 	1 9 soft 25.0 1.5
+pair_coeff 	3 9 soft 25.0 1.5 
+pair_coeff 	5 9 soft 25.0 1.5 
+pair_coeff 	6 9 soft 25.0 1.5 
+
+#Protein Bead(9) - DNA patches(2, 4) repulsive lj
+pair_coeff 	2 9 lj/cut 1.0 1.0 1.1224
+pair_coeff 	4 9 lj/cut 1.0 1.0 1.1224 
+
+#Protein Bead(9)-phosphates(7, 8) repulsive lj
+pair_coeff 	7 9 lj/cut 1.0 1.10355 1.238692993
+pair_coeff 	8 9 lj/cut 1.0 1.10355 1.238692993
+
+#Protein Bead(9)-protein Bead(9) repulsive lj
+pair_coeff  	9 9 lj/cut 1.0 2.0 2.2449
+
+
+
+#Protein Patch(10) - DNA beads(1, 3, 5, 6). There is no interaction.
+
+####################################################
+####################################################
+#Protein Patch(11) - DNA patches(2, 4) LJ ATTRACTION
+pair_coeff 	2 10 lj/cut 6.0 0.25 0.75
+pair_coeff 	4 10 lj/cut 6.0 0.25 0.75
+####################################################
+####################################################
+
+#Protein Patch(10)-phosphates(7, 8) lj repulsion
+pair_coeff 	7 10 lj/cut 1.0 0.35355 0.3968
+pair_coeff 	8 10 lj/cut 1.0 0.35355 0.3968
+
+#Protein Bead(9)-protein patch(10) repulsive lj
+pair_coeff      9 10 lj/cut 1.0 1.25 1.4
+
+#Protein Patch(10)-protein patch(10) lj repulsion
+pair_coeff     10 10 lj/cut 1.0 0.5 0.5612
+
+run 600000000

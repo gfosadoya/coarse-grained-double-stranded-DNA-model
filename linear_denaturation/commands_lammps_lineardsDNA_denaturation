@@ -1,0 +1,322 @@
+#####  DEFINTIONS  #####
+variable N equal 500   #number of base-pair 
+variable T equal 50    #number of helical turns
+variable hbe equal 0.1 #Hydrogen bond energy
+
+
+variable rname   index initial_configuration_lineardsDNA_N${N}_T${T}
+variable simname index dsDNA.N${N}
+
+
+#####  PARAMETERS  #####
+units lj
+atom_style molecular 
+boundary p p p  
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes 
+
+
+#####  RESTART  #####
+restart 1000000 ${simname}.Restart
+read_data ${rname}
+#read_restart ${rname}
+#reset_timestep 0 
+
+
+#####  GROUPS  #####
+group bb    type 1 3 5 6
+group hb    type 2 4
+group fake  type 5 6
+group dsdna type 1 2 3 4 5 6
+
+neigh_modify exclude molecule/intra dsdna
+
+
+#####  DUMPS  #####
+dump d1 all custom 10000 dump.lineardna.lammpstrj id mol type x y z
+dump_modify d1 format line "%d %d %d %.5f %.5f %.5f"
+
+dump d2 all custom 10000 IN*.data id mol type x y z ix iy iz
+dump_modify d2 format line "%d %d %d %.5f %.5f %.5f %d %d %d"
+
+
+#####  ANGLES  #####
+angle_style hybrid harmonic cosine
+#For the dsDNA
+angle_coeff 1 harmonic 200.0 90    
+angle_coeff 2 cosine 52.0          
+
+#For the ssDNA
+angle_coeff 3 harmonic 200.0 90    
+angle_coeff 4 cosine 52.0    
+
+
+
+#####  DIHEDRALS  #####
+dihedral_style charmm  
+#For the dsDNA
+dihedral_coeff 1 50.0 1 -144 0.0
+
+#For the ssDNA
+dihedral_coeff 2 50.0 1 -144 0.0
+
+
+
+#####  PAIRS  #####
+pair_style	lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff	* * 0.0 0.0 0.0
+
+pair_coeff	1 3 1.0 1.0 1.12246152962189 #bb1-bb2
+
+pair_coeff	1 1 1.0 1.0 1.12246152962189 #bb1-bb1
+
+pair_coeff	3 3 1.0 1.0 1.12246152962189 #bb2-bb2
+
+pair_coeff	5 6 1.0 0.5 0.5612
+pair_coeff	3 5 1.0 0.5 0.5612
+pair_coeff	1 6 1.0 0.5 0.5612
+
+
+#####  BONDS  #####
+bond_style  hybrid fene harmonic/shift/cut morse
+special_bonds fene#<=== I M P O R T A N T (new command)
+
+#For the dsDNA
+bond_coeff 1 fene  30.0  0.6825  1.0   0.4430      
+bond_coeff 2 harmonic/shift/cut  6.0 0.0 0.3 
+bond_coeff 3 morse 30.0 8 0.33       
+
+#For the ssDNA
+bond_coeff 4 morse 30.0 8 0.33
+
+
+
+#####  FIXES  #####
+fix 1 all rigid/small molecule langevin 1.0 1.0 1.0 742589
+
+#####  THERMO  #####
+compute 	MSDs bb msd
+compute		GYRs bb gyration
+thermo 1000
+thermo_style custom  step  temp  c_MSDs[4] c_GYRs cpu
+
+
+#####  INTEGR  #####
+timestep 0.005
+
+shell mkdir den_linear_DNA_N${N}_T${T}
+shell cd den_linear_DNA_N${N}_T${T}
+
+write_data newconfiguration_0 nocoeff
+
+shell cd ../
+
+undump d1
+undump d2
+
+#########
+#  RUN  #
+#########
+
+run 10000
+
+
+
+
+
+
+
+
+
+
+
+
+
+######################################################################################
+# Remove Angle cosine and dihedral interactions of the already denaturated base-pairs#
+######################################################################################
+#######################################
+# Now we can introduce loop variables #
+#######################################
+
+variable Dt equal 10000                                #Every Dt timesteps call the external programm to change lp of ssDNA
+variable totalrun equal 40000000
+variable nloops equal (${totalrun}+${Dt})/${Dt}       
+variable a loop 1 ${nloops}
+
+###  Start loop  ###
+label start_loop
+
+variable mytime1 equal (${a}-1)*${Dt}                    #number of file to read from
+shell echo ${mytime1}
+variable readingname index newconfiguration_             #name of the file to read from 
+
+variable mytime2 equal ${a}*${Dt}                        #number of file to write in
+shell echo ${mytime2}
+variable writingname index oldconfiguration_             #name of the file to write in (after the external programm has been called)
+
+#NOTE: This part of the script reads for example, the configuration at time 0 (newconfiguration_0), then runs that configuration for Dt timesteps. After this it creates the file oldconfiguration_Dt. Then it calls the c++ external programm that takes the data from oldconfiguration_Dt, it looks for denatured base-pairs to change the type of interactions and after change it saves it in the file newconfiguration_Dt. Therefore if the user wants to optimise the space we suggest to change "variable writingname index oldconfiguration_" to "variable writingname index newconfiguration_" in the previous section.
+
+################
+#  PARAMETERS  #
+################
+clear
+
+units lj
+atom_style molecular 
+boundary p p p  
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes 
+
+shell cd den_linear_DNA_N${N}_T${T}
+read_data ${readingname}${mytime1}
+
+
+
+#####  GROUPS  #####
+group bb    type 1 3 5 6
+group hb    type 2 4
+group fake  type 5 6
+group dsdna type 1 2 3 4 5 6
+
+neigh_modify exclude molecule/intra dsdna
+
+
+
+
+###########
+#  DUMPS  #
+###########
+dump d1 all custom ${Dt} dump.lineardna.lammpstrj id mol type x y z
+dump_modify  d1 format line "%d %d %d %.5f %.5f %.5f"
+dump_modify  d1 append yes
+
+
+
+############
+#  ANGLES  #
+############
+#For the dsDNA
+angle_style hybrid harmonic cosine
+angle_coeff 1 harmonic 200.0 90    
+angle_coeff 2 cosine 52.0          
+
+#For the SsDNA
+angle_coeff 3 harmonic 20.0 90    
+angle_coeff 4 cosine 2.0          
+
+
+
+
+###############
+#  DIHEDRALS  #
+###############
+#For the dsDNA
+dihedral_style charmm  
+dihedral_coeff 1 50.0 1 -144 0.0 
+
+#For the ssDNA
+dihedral_coeff 2 0.0 1 -144 0.0 
+
+
+
+
+###########
+#  PAIRS  #
+###########
+pair_style	lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff	* * 0.0 0.0 0.0
+
+pair_coeff	1 3 1.0 1.0 1.12246152962189 #bb1-bb2
+
+pair_coeff	1 1 1.0 1.0 1.12246152962189 #bb1-bb1
+
+pair_coeff	3 3 1.0 1.0 1.12246152962189 #bb2-bb2
+
+pair_coeff	5 6 1.0 0.5 0.5612
+pair_coeff	3 5 1.0 0.5 0.5612
+pair_coeff	1 6 1.0 0.5 0.5612
+
+
+
+
+###########
+#  BONDS  #
+###########
+#For the dsDNA
+bond_style  hybrid fene harmonic/shift/cut morse
+special_bonds fene#<=== I M P O R T A N T (new command)
+bond_coeff 1 fene  30.0  0.6825  1.0   0.4430      
+bond_coeff 2 harmonic/shift/cut  ${hbe} 0.0 0.3 
+bond_coeff 3 morse 30.0 8 0.33       
+
+#For the ssDNA
+bond_coeff 4 morse 3.0 8 0.33
+
+
+
+
+###########
+#  FIXES  #
+###########
+variable seed equal (${mytime1}+5)*2
+fix 1 all rigid/small molecule langevin   1.0 1.0 1.0   ${seed}
+
+############
+#  THERMO  #
+############
+compute 	MSDs bb msd
+compute		GYRs bb gyration
+thermo 1000
+thermo_style custom  step v_mytime1  temp  c_MSDs[4] c_GYRs cpu
+
+fix print1 dsdna print 10000 "$(v_mytime1)  $(c_GYRs)" screen no append radius_of_gyration.txt title ""
+
+
+#############
+#  INTEGER  #
+#############
+timestep 0.0025
+
+
+#########
+#  RUN  #
+#########
+run ${Dt}
+
+write_data ${writingname}${mytime2} nocoeff
+
+shell ./linear_lp_ssDNA_new_list_cosine_stack_roll_dihedral.out ${mytime2} ${writingname} ${readingname}
+shell cd ../
+
+
+delete_bonds all bond 1 remove
+delete_bonds all bond 2 remove
+delete_bonds all bond 3 remove
+delete_bonds all bond 4 remove
+
+
+delete_bonds all angle 1 remove 
+delete_bonds all angle 2 remove 
+delete_bonds all angle 3 remove 
+delete_bonds all angle 4 remove 
+
+delete_bonds all dihedral 1 remove
+delete_bonds all dihedral 2 remove
+
+neigh_modify exclude group all all
+
+
+### Clean variables
+variable mytime1 delete
+variable mytime2 delete
+variable seed delete
+
+undump d1
+
+
+next a
+jump commands_lammps_lineardsDNA_denaturation start_loop
+

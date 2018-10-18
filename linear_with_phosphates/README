@@ -1,0 +1,55 @@
+Note: We recommend the user to first familiarise with the dsDNA model without phosphates and then to continue with the dsDNA model with phosphates.
+
+The initial configuration for the model with phosphates is the one of a linear dsDNA, 1000 bp long, with its axis pointing along the positive z-direction (starting from z=0).
+In this file:
+
+    1.-Each nucleotide is represented by a rigid body with three interaction sites, so in total there are 6000 particles (3000 per single-stranded DNA (ssDNA)).
+    2.-The first 3000 particles correspond to the patchy beads in the first strand:
+	a)The "bead" sites are represented by indices:      1, 4, 7, ..., 2998.
+	b)The "patch" sites are represented by indices:     2, 5, 8, ..., 2999.
+	c)The "phosphate" sites are represented by indices: 3, 6, 9, ..., 3000.
+    3.-Since a nucleotide is made by three particles, there are 1000 rigid bodies per ssDNA.
+       For example, particles 1, 2 and 3 are part of the same molecule: 1.
+    4.-The type of particles in the first strand:
+	a)All the patches are of type 2.
+	b)Every interactive bead (type 1) is followed by two ghost beads (type 5).
+        c)All the phosphates are type 7.
+    5.-The complementary ssDNA (last 3000 particles) are arrange in a similar way to the first ssDNA:
+	a)The "bead" sites are represented by indices:      3001, 3004, 3007, ..., 5998.
+	b)The "patch" sites are represented by indices:     3002, 3005, 3008, ..., 5999.
+	c)The "phosphate" sites are represented by indices: 3003, 3006, 3009, ..., 6000.
+	d)All the patches are of type 4.
+	e)Every interactive bead (type 3) is followed by two ghost beads (type 6).
+        f)All the phosphates are type 8.
+
+The type of interactions are explained in detail in our paper. These are summarized here:
+    1.-Backbone: set by fene bonds(type 1) between consecutive beads in the same strand. This means between indices:
+                 Strand 1: 1-4, 4-7, 7-10, ..., 2995-2998.
+                 Strand 2: 3001-3004, 3004-3007, 3007-3010, ..., 5995-5998
+    2.-Hydrogen Bonds: set by a harmonic/shift/cut bond(type 2) between complementary patches. This means between indices:
+                 2-3002, 5-3005, 8-3008, ..., 2999-5999.
+    3.-Stacking interaction: set by a morse potential that is implemented in lammps by a bond (type 3) between consecutive
+       patches in the same strand. This means between indices:
+                 Strand 1: 2-5, 5-8, 8-11, ..., 2996-2999.
+                 Strand 2: 3002-3005, 3005-3008, 3008-3011, ..., 5996-5999.
+
+    4.-Roll interaction: set by a harmonic angle (type 1) between two consecutive patches and the bead of the second patch.
+       This means between indices:
+                 Strand 1: 2-5-4, 5-8-7, 8-11-10, ..., 2996-2999-2998.
+                 Strand 2: 3002-3005-3004, 3005-3008-3007, 3008-3011-3010, ..., 5996-5999-5998.
+       We include also a constraint in the first bases (just for the linear chain) of each strand with the same type of angle.
+                 Strand 1: 1-2-5.
+                 Strand 2: 3001-3002-3005.
+    5.-Kratky–Porod potential: set by a cosine angle (type 2) between three sonsecutive patches in the same strand.
+       This means between indices:
+                 Strand 1: 2-5-8, 5-8-11, 8-11-14, ..., 2993-2996-2999.
+                 Strand 2: 3002-3005-3008, 3005-3008-3011, 3008-3011-3014, ..., 5993-5996-5999.
+
+    6.-Dihedral for the right-handedness of the chain.(type 1) between the quadrupled of monomers (bead-patch-patch-bead).
+       This means between indices:
+                 Strand 1: 1-2-5-4, 4-5-8-7, 7-8-11-10, ...,2995-2996-2999-2998.
+                 Strand 2: 3001-3002-3005-3004, 3004-3005-3008-3007, 3007-3008-3011-3010, ...,5995-5996-5999-5998.
+
+
+In order to run the LAMMPS script type in a terminal: 
+     ./lmp_serial_22Aug2018 -in commands_lammps_dsDNA_with_phosphates
